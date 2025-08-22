@@ -46,7 +46,7 @@ cat << "EOF"
      \/  \__,_||_| |_||_||_||_| \__,_|   |_| \_| \__,_||_| |_||_| \__,_| \__,_|                                                                                                                                                                                                                               
 EOF
 echo -e "\e[0m"  # 重置颜色
-echo -e "\e[1;36m  小智服务端全量部署一键安装脚本 Ver 0.2 \e[0m\n"
+echo -e "\e[1;36m  小智服务端全量部署一键安装脚本 Ver 0.2 2025年8月20日更新 \e[0m\n"
 sleep 1
 
 
@@ -376,7 +376,7 @@ done
 
     echo "服务端启动成功！正在完成配置..."
     echo "正在启动服务..."
-    docker compose -f docker-compose_all.yml up -d
+    docker compose -f /opt/xiaozhi-server/docker-compose_all.yml up -d
     echo "服务启动完成！"
 )
 
@@ -402,13 +402,12 @@ fi
 
 # 获取并显示地址信息
 LOCAL_IP=$(hostname -I | awk '{print $1}')
-WEBSOCKET_ADDR=$(docker logs xiaozhi-esp32-server 2>&1 | tac | grep -m 1 -E -o "ws://[^ ]+")
-VISION_ADDR=$(docker logs xiaozhi-esp32-server 2>&1 | tac | grep -m 1 "视觉" | grep -m 1 -E -o "http://[^ ]+")
 
+# 修复日志文件获取不到ws的问题，改为硬编码
 whiptail --title "安装完成！" --msgbox "\
 服务端相关地址如下：\n\
 管理后台访问地址: http://$LOCAL_IP:8002\n\
 OTA 地址: http://$LOCAL_IP:8002/xiaozhi/ota/\n\
-视觉分析接口地址: $VISION_ADDR\n\
-WebSocket 地址: $WEBSOCKET_ADDR\n\
+视觉分析接口地址: http://$LOCAL_IP:8003/mcp/vision/explain\n\
+WebSocket 地址: ws://$LOCAL_IP:8000/xiaozhi/v1/\n\
 \n安装完毕！感谢您的使用！\n按Enter键退出..." 16 70
