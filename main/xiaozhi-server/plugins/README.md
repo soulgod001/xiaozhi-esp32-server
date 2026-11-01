@@ -10,19 +10,20 @@
 ## 目录结构
 
 ```
-plugins/
-├── __init__.py              # 统一扫描和注册逻辑
+plugins/                      # 系统固定内容（插件框架，不建议修改）
+├── __init__.py              # 统一扫描和注册逻辑（内置 + 外部 data/plugins）
 ├── base.py                  # BasePlugin 基类和 PluginAction 枚举
-├── manager.py               # PluginManager 插件管理器
-├── register.py              # @register_function 装饰器和注册系统
+├── manager.py               # PluginManager 插件管理器（前/后处理链路）
+├── register.py              # @register_function 装饰器和注册系统 + provider_registry
 ├── loadplugins.py           # 模块自动导入工具
 │
-├── functions/               # 扁平结构的MCP函数（兼容旧版）
-│   └── ... (可选)
-│
-└── preprocess_plugin/       # 插件示例：智能家居预处理
-    ├── __init__.py          # 插件主类
-    ├── mcp_functions.py     # MCP函数定义
+└── functions/               # 扁平结构的MCP函数（兼容旧版）
+    └── ... (可选)
+
+data/plugins/                 # 外部插件目录（用户可自由新增/修改/删除）
+├── _template_plugin/        # 插件开发模板（"_" 开头目录不参与扫描，复制改名后生效）
+└── smart_home_plugin/       # 插件示例：智能家居设备控制
+    ├── __init__.py          # 插件主类（SmartHomePlugin）
     └── intents.yaml         # 配置文件
 ```
 
@@ -134,7 +135,7 @@ class ConnectionHandler:
 
 - `core.plugin` → 实际导入 `plugins`
 - `plugins_func.register` → 实际导入 `plugins.register`
-- `core.plugin.preprocess_plugin` → 实际导入 `plugins.preprocess_plugin`
+- 智能家居插件位于外部目录：`data/plugins/smart_home_plugin/`，模块路径 `external_plugins.smart_home_plugin`
 
 ## 测试
 

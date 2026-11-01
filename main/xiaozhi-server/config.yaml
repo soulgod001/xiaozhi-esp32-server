@@ -1087,6 +1087,20 @@ TTS:
     speed: 1
     output_dir: tmp/
     # language: "中文"  # 指定输出语种,如:中文、英语、日语、韩语等,请根据所选音色支持的语言进行设置,不填则默认为中文
+  MimoTTS:
+    # 小米 MiMo TTS 服务(OpenAI chat completions 兼容接口,流式输出)
+    # 文档: https://mimo.mi.com/docs/zh-CN/api/audio/tts
+    # 在小米开放平台获取 API Key
+    type: MimoTTS
+    api_key: 你的MIMO_API_KEY
+    api_url: https://api.xiaomimimo.com/v1/chat/completions
+    # 可选 mimo-v2.5-tts / mimo-v2.5-tts-voicedesign / mimo-v2.5-tts-voiceclone
+    model: mimo-v2.5-tts
+    # 预置音色: mimo_default, 冰糖, 茉莉, 苏打, 白桦, Mia, Chloe, Milo, Dean
+    voice: mimo_default
+    # PCM 采样率(流式返回 pcm16),默认 24000
+    sample_rate: 24000
+    output_dir: tmp/
   CustomTTS:
     # 自定义的TTS接口服务，请求参数可自定义，可接入众多TTS服务
     # 以本地部署的KokoroTTS为例

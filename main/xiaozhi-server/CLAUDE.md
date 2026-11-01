@@ -28,13 +28,15 @@ ESP32 Device → WebSocket → VAD → ASR → [Plugin Preprocessing] → [Inten
 - `core/providers/tts/` - Text-to-Speech synthesis
 
 **3. Plugin System (Critical Path)**
-- `plugins/` - Plugin framework and smart home control
+- `plugins/` - Plugin framework (system core, do not modify)
   - `base.py` - BasePlugin interface
-  - `manager.py` - Plugin orchestration
-  - `register.py` - MCP function registration
-  - `preprocess_plugin/` - Smart home device control plugin
-    - `__init__.py` - Intent recognition & device matching engine
+  - `manager.py` - Plugin orchestration (pre/post processing chains)
+  - `register.py` - MCP function registration + provider_registry
+- `data/plugins/` - External plugins (users can add/modify/remove)
+  - `smart_home_plugin/` - Smart home device control plugin
+    - `__init__.py` - Intent recognition & device matching engine (SmartHomePlugin)
     - `intents.yaml` - YAML-based intent configuration
+  - `_template_plugin/` - Plugin development template (skipped by scanner)
 
 **4. Message Handlers**
 - `core/handle/` - Various message handlers
@@ -80,8 +82,8 @@ touch data/.config.yaml
 
 ## Plugin System Details
 
-### Smart Home Preprocessing Plugin
-The `PreprocessPlugin` provides YAML-based intent recognition for smart home control.
+### Smart Home Plugin
+The `SmartHomePlugin` (located at `data/plugins/smart_home_plugin/`) provides YAML-based intent recognition for smart home control.
 
 #### Core Rules (11 Rules)
 
@@ -138,7 +140,7 @@ The `PreprocessPlugin` provides YAML-based intent recognition for smart home con
 - When `{all_word}` present, operate on ALL devices matching substring
 - Example: "打开所有筒灯" → ["左筒灯", "右筒灯", "厨房筒灯"]
 
-#### Configuration: `plugins/preprocess_plugin/intents.yaml`
+#### Configuration: `data/plugins/smart_home_plugin/intents.yaml`
 
 ```yaml
 # 全局配置
@@ -370,7 +372,7 @@ async def get_weather(location: str):
 - Logging configuration
 - TTS/audio parameters
 
-### `plugins/preprocess_plugin/intents.yaml` - Intent Configuration
+### `data/plugins/smart_home_plugin/intents.yaml` - Intent Configuration
 ```yaml
 intents:
   LightControlIntent:
@@ -455,7 +457,7 @@ uv run python test_plugin.py
 ```
 
 ### Modifying Intent Patterns
-1. Edit `plugins/preprocess_plugin/intents.yaml`
+1. Edit `data/plugins/smart_home_plugin/intents.yaml`
 2. Run `uv run python test_plugin.py` to verify
 3. No restart needed for YAML changes (hot reload)
 
@@ -502,7 +504,7 @@ class MyPlugin(BasePlugin):
 1. **Plugin not loading**: Check `scan_plugins()` in `plugins/__init__.py`
 2. **Intent not matching**: Verify YAML syntax and expansion_rules
 3. **Device not found**: Check area filtering and default_area config
-4. **API failures**: Verify device_api_url in `plugins/preprocess_plugin/__init__.py`
+4. **API failures**: Verify device_api_url in `data/plugins/smart_home_plugin/__init__.py`
 
 ### Logs
 - Check `tmp/server.log` for detailed logs
@@ -534,22 +536,24 @@ xiaozhi-server/
 │           ├── device_iot/        # IoT device control
 │           ├── device_mcp/        # Device MCP client
 │           └── mcp_endpoint/      # External MCP endpoint
-├── plugins/                        # Plugin system
-│   ├── __init__.py                # Plugin scanner
+├── plugins/                        # Plugin framework (system core)
+│   ├── __init__.py                # Plugin scanner (built-in + external)
 │   ├── base.py                    # BasePlugin interface
 │   ├── manager.py                 # Plugin manager
-│   ├── register.py                # MCP function registration
-│   ├── loadplugins.py             # Function loader
-│   └── preprocess_plugin/         # Smart home plugin
-│       ├── __init__.py            # Intent engine
-│       └── intents.yaml           # Intent config
+│   ├── register.py                # MCP function + provider registration
+│   └── loadplugins.py             # Function loader
 ├── plugins_func/                   # Legacy MCP functions
 │   ├── register.py
 │   └── functions/
 ├── test_plugin.py                 # Plugin tests
 ├── test_mcp_functions.py          # MCP function tests
 └── data/
-    └── .config.yaml               # Custom config (create this)
+    ├── .config.yaml               # Custom config (create this)
+    └── plugins/                   # External plugins (user-managed)
+        ├── _template_plugin/      # Plugin development template
+        └── smart_home_plugin/     # Smart home plugin
+            ├── __init__.py        # Intent engine (SmartHomePlugin)
+            └── intents.yaml       # Intent config
 ```
 
 ## Notes for Claude

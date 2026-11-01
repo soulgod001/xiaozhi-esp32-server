@@ -29,15 +29,18 @@ class MockConn:
         self.logger = SimpleLogger()
 
 try:
+    # 外部插件需要先扫描加载（external_plugins 是运行时虚拟包）
+    from plugins import scan_plugins
+    scan_plugins()
     # 尝试导入插件模块
-    from plugins.preprocess_plugin import PreprocessPlugin
+    from external_plugins.smart_home_plugin import SmartHomePlugin
     print("插件导入成功")
 
     # 创建logger实例
     logger = SimpleLogger()
 
     # 尝试创建插件实例，传入logger
-    plugin = PreprocessPlugin(logger=logger)
+    plugin = SmartHomePlugin(logger=logger)
     print("插件实例化成功")
 
     # 测试插件的pre_process_text方法
@@ -209,7 +212,7 @@ try:
 
     # ========== 新增单元测试 ==========
     print("\\n\\n=== 开始新增单元测试 ===")
-    from plugins.preprocess_plugin import PreprocessPlugin, TemplateMatcher
+    from external_plugins.smart_home_plugin import SmartHomePlugin, TemplateMatcher
 
     # 测试1: TemplateMatcher - 严格顺序匹配
     print("\\n测试1: TemplateMatcher - 严格顺序匹配")
@@ -298,7 +301,7 @@ try:
         {"names": "客厅吊灯", "areas": "客厅", "device_class": "light"},
         {"names": "卧室灯", "areas": "卧室", "device_class": "light"}
     ]
-    plugin4 = PreprocessPlugin()
+    plugin4 = SmartHomePlugin()
     config4 = {"global": {"default_area": "客厅", "restrict_to_default_area": True}}
     plugin4.config = config4
 
@@ -318,7 +321,7 @@ try:
         {"names": "右筒灯", "areas": "客厅", "device_class": "light"},
         {"names": "客厅吊灯", "areas": "客厅", "device_class": "light"}
     ]
-    plugin5 = PreprocessPlugin()
+    plugin5 = SmartHomePlugin()
 
     # 无区域查找
     result5a = plugin5._find_devices_by_name_and_area("筒灯", None, devices5)
@@ -336,7 +339,7 @@ try:
         {"names": "客厅开关", "areas": "客厅", "device_class": "switch"},
         {"names": "温度传感器", "areas": "客厅", "device_class": "sensor"}
     ]
-    plugin6 = PreprocessPlugin()
+    plugin6 = SmartHomePlugin()
     result6 = plugin6._filter_supported_devices(devices6, "set_brightness")
     assert len(result6) == 1, f"期望1个设备（只有light支持set_brightness），实际{len(result6)}"
     assert result6[0]["names"] == "客厅吊灯", f"期望客厅吊灯，实际{result6[0]['names']}"
@@ -350,7 +353,7 @@ try:
         {"names": "客厅吊灯", "areas": "客厅", "device_class": "light"}
     ]
     config7 = {"default_devices": ["客厅吊灯"]}
-    plugin7 = PreprocessPlugin()
+    plugin7 = SmartHomePlugin()
     plugin7.config = config7
     result7 = plugin7._apply_default_device_rule(devices7)
     assert len(result7) == 1, f"期望1个设备，实际{len(result7)}"

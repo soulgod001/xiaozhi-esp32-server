@@ -95,6 +95,17 @@ class DeviceTypeRegistry:
 all_function_registry = {}
 # 模块名 -> 函数名列表的映射，用于将模块级别的插件名展开为具体的函数名
 module_func_map = {}
+# 插件贡献的自定义 provider 注册表: {provider_type: {class_name: class}}
+# provider_type 取值: asr / llm / tts / memory / vllm / vad / intent
+provider_registry = {
+    "asr": {},
+    "llm": {},
+    "tts": {},
+    "memory": {},
+    "vllm": {},
+    "vad": {},
+    "intent": {},
+}
 
 
 def register_function(name, desc, type=None):

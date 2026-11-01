@@ -1095,6 +1095,30 @@ class ConnectionHandler:
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 
+    def _run_post_plugins_sync(self, text: str) -> str:
+        """同步调用插件的 post_process_text 链路。
+
+        chat() 方法通常运行在线程池中，不是 async 上下文，所以用
+        asyncio.run_coroutine_threadsafe 提交给 self.loop 并等待结果。
+        """
+        if not text:
+            return text
+        pm = getattr(self, "plugin_manager", None)
+        if not pm:
+            return text
+        try:
+            import asyncio
+            fut = asyncio.run_coroutine_threadsafe(
+                pm.process_text_post(self, text), self.loop
+            )
+            # 给一个宽松的超时，避免卡死整个流程
+            result = fut.result(timeout=15)
+            if result is not None and result != "":
+                return result
+        except Exception as e:
+            self.logger.bind(tag=TAG).warning(f"后处理插件执行失败，使用原文本: {e}")
+        return text
+
     def chat(self, query, depth=0):
         # 保存当前任务的sentence_id到局部变量，避免被新任务覆盖
         current_sentence_id = None
@@ -1338,6 +1362,8 @@ class ConnectionHandler:
                                     )
                             # 写入对话历史
                             da_response = self._clean_response_garbage(da_response)
+                            # ---- 插件后处理 (direct_answer 路径) ----
+                            da_response = self._run_post_plugins_sync(da_response)
                             self.tts.store_tts_text(current_sentence_id, da_response)
                             self.dialogue.put(Message(role="assistant", content=da_response))
 
@@ -1417,6 +1443,8 @@ class ConnectionHandler:
         # 存储对话内容
         if len(response_message) > 0:
             text_buff = "".join(response_message)
+            # ---- 插件后处理 (普通 LLM 回复路径) ----
+            text_buff = self._run_post_plugins_sync(text_buff)
             self.tts.store_tts_text(current_sentence_id, text_buff)
             self.dialogue.put(Message(role="assistant", content=text_buff))
 
@@ -1448,6 +1476,8 @@ class ConnectionHandler:
                 Action.ERROR,
             ]:
                 text = result.response if result.response else result.result
+                # ---- 插件后处理 (工具 RESPONSE/ERROR 路径) ----
+                text = self._run_post_plugins_sync(text)
                 if streamed_text and text in streamed_text:
                     self.logger.bind(tag=TAG).debug(
                         f"Skipping duplicate TTS for tool {tool_call_data['name']}, already streamed"

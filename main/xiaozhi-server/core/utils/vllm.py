@@ -13,7 +13,18 @@ logger = setup_logging()
 
 
 def create_instance(class_name, *args, **kwargs):
-    # 创建LLM实例
+    # 创建VLLM实例
+    # ---- 步骤1: 优先从插件注册表中查找 ----
+    try:
+        from plugins.register import provider_registry
+        if class_name in provider_registry.get("vllm", {}):
+            cls = provider_registry["vllm"][class_name]
+            logger.info(f"使用插件提供的VLLM实现: {class_name} -> {cls.__name__}")
+            return cls(*args, **kwargs)
+    except Exception as e:
+        logger.warning(f"从插件注册表加载VLLM {class_name} 失败，回退内置实现: {e}")
+
+    # ---- 步骤2: 原有内置路径加载 ----
     if os.path.exists(os.path.join("core", "providers", "vllm", f"{class_name}.py")):
         lib_name = f"core.providers.vllm.{class_name}"
         if lib_name not in sys.modules:
