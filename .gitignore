@@ -155,6 +155,7 @@ tmp
 .DS_Store
 main/xiaozhi-server/data
 main/xiaozhi-server/.claude
+.trae
 
 main/manager-web/node_modules
 .config.yaml
